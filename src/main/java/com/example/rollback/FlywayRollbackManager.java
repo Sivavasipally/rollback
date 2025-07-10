@@ -115,8 +115,8 @@ public class FlywayRollbackManager {
         try {
             String sql;
             if (isH2Database()) {
-                // For H2, export to CSV
-                String csvPath = snapshotDir.resolve(tableName + ".csv").toString();
+                // For H2, export to CSV - use forward slashes for H2 compatibility
+                String csvPath = snapshotDir.resolve(tableName + ".csv").toString().replace("\\", "/");
                 sql = String.format("CALL CSVWRITE('%s', 'SELECT * FROM %s')", csvPath, tableName);
                 jdbcTemplate.execute(sql);
             } else {
