@@ -44,6 +44,7 @@ public class ProductionRollbackConfiguration {
     
     @Bean
     @Primary
+    @ConditionalOnProperty(name = "flyway.rollback.enabled", havingValue = "true")
     public ProductionRollbackManager productionRollbackManager(DataSource dataSource,
                                                             FlywayRollbackProperties properties,
                                                             DatabaseSnapshotManager snapshotManager,

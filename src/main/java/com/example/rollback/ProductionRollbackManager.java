@@ -3,6 +3,7 @@ package com.example.rollback;
 import com.example.rollback.properties.FlywayRollbackProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  * Handles DML/DDL/DQL/DCL/TCL operations with data preservation
  */
 @Service
+@ConditionalOnProperty(name = "flyway.rollback.enabled", havingValue = "true")
 public class ProductionRollbackManager {
     
     private static final Logger log = LoggerFactory.getLogger(ProductionRollbackManager.class);
