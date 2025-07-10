@@ -313,7 +313,46 @@ public class DatabaseSnapshotManager {
      * Restores data from snapshot
      */
     private void restoreData(Path snapshotDir, Map<String, Object> metadata) {
-        // Implementation depends on database type
+        try {
+            if (isDatabaseType("H2")) {
+                restoreDataFromCSV(snapshotDir, metadata);
+            } else {
+                restoreDataFromSQL(snapshotDir, metadata);
+            }
+        } catch (Exception e) {
+            log.error("Failed to restore data from snapshot", e);
+            throw new RuntimeException("Data restoration failed", e);
+        }
+    }
+
+    private void restoreDataFromCSV(Path snapshotDir, Map<String, Object> metadata) throws IOException {
+        // Get list of tables from metadata
+        @SuppressWarnings("unchecked")
+        List<String> tables = (List<String>) metadata.getOrDefault("tables", Collections.emptyList());
+
+        for (String tableName : tables) {
+            Path csvFile = snapshotDir.resolve(tableName + ".csv");
+            if (Files.exists(csvFile)) {
+                try {
+                    // Clear existing data
+                    jdbcTemplate.execute("DELETE FROM " + tableName);
+
+                    // Restore from CSV
+                    String csvPath = csvFile.toString().replace("\\", "\\\\");
+                    String sql = String.format("INSERT INTO %s SELECT * FROM CSVREAD('%s')", tableName, csvPath);
+                    jdbcTemplate.execute(sql);
+
+                    log.debug("Restored data for table: {}", tableName);
+                } catch (Exception e) {
+                    log.warn("Failed to restore table {}: {}", tableName, e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void restoreDataFromSQL(Path snapshotDir, Map<String, Object> metadata) {
+        // Implementation for SQL-based restoration
+        log.warn("SQL-based restoration not yet implemented");
     }
     
     /**

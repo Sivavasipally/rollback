@@ -50,10 +50,18 @@ public class FlywayRollbackManager {
         log.info("Starting rollback {} to version {}", rollbackId, targetVersion);
         
         try {
+            // Validate target version exists
+            if (!isValidTargetVersion(targetVersion)) {
+                String errorMsg = "Target version " + targetVersion + " does not exist in migration history";
+                log.error(errorMsg);
+                auditRollback(rollbackId, targetVersion, "FAILED", errorMsg);
+                return RollbackResult.failure(rollbackId, targetVersion, errorMsg);
+            }
+
             // Get current version
             String currentVersion = getCurrentVersion();
             log.info("Current version: {}", currentVersion);
-            
+
             // Create snapshot before rollback
             String snapshotId = null;
             if (properties.getSnapshot().isEnabled()) {
@@ -219,6 +227,12 @@ public class FlywayRollbackManager {
                 return "db/migration/U1.0.1__Add_user_profile_table_undo.sql";
             case "1.0.2":
                 return "db/migration/U1.0.2__Add_audit_log_table_undo.sql";
+            case "1.0.3":
+                return "db/migration/U1.0.3__Add_user_preferences_table_undo.sql";
+            case "1.0.4":
+                return "db/migration/U1.0.4__Add_user_security_fields_undo.sql";
+            case "1.0.5":
+                return "db/migration/U1.0.5__Normalize_user_addresses_undo.sql";
             default:
                 return null;
         }
@@ -379,6 +393,19 @@ public class FlywayRollbackManager {
         } catch (Exception e) {
             log.warn("Failed to get previous version", e);
             return null;
+        }
+    }
+
+    private boolean isValidTargetVersion(String targetVersion) {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE version = ? AND success = " + (isH2Database() ? "TRUE" : "1"),
+                Integer.class, targetVersion
+            );
+            return count != null && count > 0;
+        } catch (Exception e) {
+            log.warn("Failed to validate target version: {}", targetVersion, e);
+            return false;
         }
     }
 }
