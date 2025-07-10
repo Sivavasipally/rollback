@@ -3,8 +3,8 @@ package com.example.config;
 
 import com.example.rollback.FlywayRollbackManager;
 import com.example.rollback.properties.FlywayRollbackProperties;
-import lombok.extern.slf4j.Slf4j;
-import org.flywaydb.core.Flyway;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -14,8 +14,9 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableConfigurationProperties(FlywayRollbackProperties.class)
-@Slf4j
 public class FlywayRollbackConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(FlywayRollbackConfiguration.class);
 
     @Bean
     public FlywayRollbackManager flywayRollbackManager(
