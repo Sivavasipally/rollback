@@ -3,6 +3,7 @@ package com.example.controller;
 import com.example.rollback.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/rollback")
 @PreAuthorize("hasRole('ADMIN') or hasRole('DBA')")
+@ConditionalOnProperty(name = "flyway.rollback.enabled", havingValue = "true", matchIfMissing = true)
 public class ProductionRollbackController {
     
     private static final Logger log = LoggerFactory.getLogger(ProductionRollbackController.class);

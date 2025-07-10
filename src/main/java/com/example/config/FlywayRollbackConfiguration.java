@@ -5,6 +5,7 @@ import com.example.rollback.FlywayRollbackManager;
 import com.example.rollback.properties.FlywayRollbackProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -19,13 +20,15 @@ public class FlywayRollbackConfiguration {
     private static final Logger log = LoggerFactory.getLogger(FlywayRollbackConfiguration.class);
 
     @Bean
+    @ConditionalOnProperty(name = "flyway.rollback.enabled", havingValue = "true", matchIfMissing = true)
     public FlywayRollbackManager flywayRollbackManager(
-            DataSource dataSource, 
+            DataSource dataSource,
             FlywayRollbackProperties properties) {
         return new FlywayRollbackManager(dataSource, properties);
     }
 
     @Bean
+    @ConditionalOnProperty(name = "flyway.rollback.enabled", havingValue = "true", matchIfMissing = true)
     public FlywayMigrationStrategy flywayMigrationStrategy(FlywayRollbackManager rollbackManager) {
         return flyway -> {
             log.info("Starting Flyway migration with rollback support");

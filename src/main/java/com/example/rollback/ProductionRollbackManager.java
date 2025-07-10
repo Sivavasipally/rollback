@@ -28,18 +28,21 @@ public class ProductionRollbackManager {
     private final DatabaseSnapshotManager snapshotManager;
     private final RollbackAuditService auditService;
     private final SafetyGuardService safetyGuard;
-    
-    public ProductionRollbackManager(DataSource dataSource, 
+    private final FlywayRollbackManager rollbackManager;
+
+    public ProductionRollbackManager(DataSource dataSource,
                                    FlywayRollbackProperties properties,
                                    DatabaseSnapshotManager snapshotManager,
                                    RollbackAuditService auditService,
-                                   SafetyGuardService safetyGuard) {
+                                   SafetyGuardService safetyGuard,
+                                   FlywayRollbackManager rollbackManager) {
         this.dataSource = dataSource;
         this.properties = properties;
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.snapshotManager = snapshotManager;
         this.auditService = auditService;
         this.safetyGuard = safetyGuard;
+        this.rollbackManager = rollbackManager;
     }
     
     /**
@@ -196,23 +199,18 @@ public class ProductionRollbackManager {
      */
     private boolean executeRollbackSteps(String currentVersion, String targetVersion) {
         try {
-            // Get ordered list of migrations to rollback
-            List<String> versionsToRollback = getVersionsToRollback(currentVersion, targetVersion);
-            
-            for (String version : versionsToRollback) {
-                log.info("Rolling back version: {}", version);
-                
-                // Execute undo script for this version
-                if (!executeUndoScript(version)) {
-                    log.error("Failed to execute undo script for version: {}", version);
-                    return false;
-                }
-                
-                // Update schema history
-                removeVersionFromHistory(version);
+            log.info("Executing rollback from version {} to version {}", currentVersion, targetVersion);
+
+            // Use the FlywayRollbackManager to execute the complete rollback
+            RollbackResult result = rollbackManager.rollbackToVersion(targetVersion);
+
+            if (result.isSuccess()) {
+                log.info("Successfully executed rollback to version: {}", targetVersion);
+                return true;
+            } else {
+                log.error("Failed to execute rollback to version: {}. Error: {}", targetVersion, result.getErrorMessage());
+                return false;
             }
-            
-            return true;
             
         } catch (Exception e) {
             log.error("Failed to execute rollback steps", e);
@@ -304,9 +302,24 @@ public class ProductionRollbackManager {
     }
     
     private boolean executeUndoScript(String version) {
-        // Implementation would execute the undo script for the version
-        log.info("Executing undo script for version: {}", version);
-        return true;
+        try {
+            log.info("Executing undo script for version: {}", version);
+
+            // Use the FlywayRollbackManager to execute the actual undo script
+            RollbackResult result = rollbackManager.rollbackToVersion(version);
+
+            if (result.isSuccess()) {
+                log.info("Successfully executed undo script for version: {}", version);
+                return true;
+            } else {
+                log.error("Failed to execute undo script for version: {}. Error: {}", version, result.getErrorMessage());
+                return false;
+            }
+
+        } catch (Exception e) {
+            log.error("Exception while executing undo script for version: {}", version, e);
+            return false;
+        }
     }
     
     private void removeVersionFromHistory(String version) {

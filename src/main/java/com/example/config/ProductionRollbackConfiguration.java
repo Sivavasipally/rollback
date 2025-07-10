@@ -44,13 +44,14 @@ public class ProductionRollbackConfiguration {
     
     @Bean
     @Primary
-    public ProductionRollbackManager productionRollbackManager(DataSource dataSource, 
+    public ProductionRollbackManager productionRollbackManager(DataSource dataSource,
                                                             FlywayRollbackProperties properties,
                                                             DatabaseSnapshotManager snapshotManager,
                                                             RollbackAuditService auditService,
-                                                            SafetyGuardService safetyGuard) {
-        return new ProductionRollbackManager(dataSource, properties, snapshotManager, 
-                                           auditService, safetyGuard);
+                                                            SafetyGuardService safetyGuard,
+                                                            FlywayRollbackManager rollbackManager) {
+        return new ProductionRollbackManager(dataSource, properties, snapshotManager,
+                                           auditService, safetyGuard, rollbackManager);
     }
     
 
