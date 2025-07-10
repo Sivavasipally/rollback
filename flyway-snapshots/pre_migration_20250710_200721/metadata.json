@@ -1,0 +1,6 @@
+{
+  "tables" : [ "CONSTANTS", "ENUM_VALUES", "INDEXES", "INDEX_COLUMNS", "INFORMATION_SCHEMA_CATALOG_NAME", "IN_DOUBT", "LOCKS", "QUERY_STATISTICS", "RIGHTS", "ROLES", "SESSIONS", "SESSION_STATE", "SETTINGS", "SYNONYMS", "USERS" ],
+  "snapshotId" : "pre_migration_20250710_200721",
+  "currentVersion" : "0",
+  "timestamp" : "2025-07-10T20:07:21.250403500"
+}

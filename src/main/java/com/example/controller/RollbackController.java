@@ -5,16 +5,17 @@ import com.example.rollback.FlywayRollbackManager;
 import com.example.rollback.RollbackRequest;
 import com.example.rollback.RollbackResult;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/flyway/rollback")
 @RequiredArgsConstructor
-@Slf4j
 public class RollbackController {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(RollbackController.class);
     private final FlywayRollbackManager rollbackManager;
     
     @PostMapping("/execute")

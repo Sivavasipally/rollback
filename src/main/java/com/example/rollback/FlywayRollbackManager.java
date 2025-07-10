@@ -3,13 +3,13 @@ package com.example.rollback;
 
 import com.example.rollback.properties.FlywayRollbackProperties;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,9 +21,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
-@Slf4j
 @RequiredArgsConstructor
 public class FlywayRollbackManager {
+
+    private static final Logger log = LoggerFactory.getLogger(FlywayRollbackManager.class);
     
     private final DataSource dataSource;
     private final FlywayRollbackProperties properties;
@@ -68,12 +69,12 @@ public class FlywayRollbackManager {
             // Audit the rollback
             auditRollback(rollbackId, targetVersion, "SUCCESS", null);
             
-            return new RollbackResult(true, rollbackId, targetVersion, snapshotId, null);
-            
+            return RollbackResult.success(rollbackId, targetVersion, snapshotId);
+
         } catch (Exception e) {
             log.error("Rollback failed", e);
             auditRollback(rollbackId, targetVersion, "FAILED", e.getMessage());
-            return new RollbackResult(false, rollbackId, targetVersion, null, e.getMessage());
+            return RollbackResult.failure(rollbackId, targetVersion, e.getMessage());
         }
     }
     
@@ -149,7 +150,7 @@ public class FlywayRollbackManager {
         }
     }
     
-    private String getCurrentVersion() {
+    public String getCurrentVersion() {
         try {
             return jdbcTemplate.queryForObject(
                 "SELECT version FROM flyway_schema_history " +
@@ -261,6 +262,34 @@ public class FlywayRollbackManager {
     
     public void handleMigrationFailure(Exception e) {
         log.error("Handling migration failure", e);
-        // Implement auto-rollback logic if needed
+
+        try {
+            // Attempt to rollback to previous version
+            String currentVersion = getCurrentVersion();
+            String previousVersion = getPreviousVersion(currentVersion);
+
+            if (previousVersion != null) {
+                log.info("Attempting automatic rollback to version: {}", previousVersion);
+                rollbackToVersion(previousVersion);
+            }
+        } catch (Exception rollbackException) {
+            log.error("Automatic rollback failed", rollbackException);
+        }
+    }
+
+
+
+    private String getPreviousVersion(String currentVersion) {
+        try {
+            return jdbcTemplate.queryForObject(
+                "SELECT version FROM flyway_schema_history " +
+                "WHERE version < ? AND success = " + (isH2Database() ? "TRUE" : "1") + " " +
+                "ORDER BY installed_rank DESC LIMIT 1",
+                String.class, currentVersion
+            );
+        } catch (Exception e) {
+            log.warn("Failed to get previous version", e);
+            return null;
+        }
     }
 }

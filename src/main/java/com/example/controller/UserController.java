@@ -2,7 +2,7 @@
 package com.example.controller;
 
 import com.example.model.User;
-import com.example.repository.UserRepository;
+import com.example.model.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
